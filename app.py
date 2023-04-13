@@ -1,66 +1,64 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+import os
 
-# Load existing data or create new DataFrame
-if st.checkbox("Do you have existing spend data?"):
-    file = st.file_uploader("Upload a CSV file")
-    if file is not None:
-        data = pd.read_csv(file)
-    else:
-        data = pd.DataFrame(columns=["Date", "Category", "Amount"])
-else:
-    data = pd.DataFrame(columns=["Date", "Category", "Amount"])
+# Define the name of the CSV file to store the data
+CSV_FILE_NAME = "spend_data.csv"
 
-# Get user input
-st.write("## Add New Spend Data")
-amount = st.number_input("Amount", min_value=0.01, step=0.01)
-category = st.selectbox("Category", ["Groceries", "Entertainment", "Travel", "Utilities", "Other"])
-date = st.date_input("Date", pd.Timestamp.today().date())
+# Define the columns for the CSV file
+CSV_COLUMNS = ["Item", "Amount"]
 
-# Add new spend data to DataFrame
-if st.button("Add"):
-    new_row = pd.DataFrame({"Date": [date], "Category": [category], "Amount": [amount]})
-    data = data.append(new_row, ignore_index=True)
+# Check if the CSV file exists, if not create it
+if not os.path.isfile(CSV_FILE_NAME):
+    with open(CSV_FILE_NAME, "w") as file:
+        file.write(",".join(CSV_COLUMNS) + "\n")
 
-# Display data
-st.write("## Spend Data")
-st.dataframe(data)
+# Define a function to append data to the CSV file
+def append_data_to_csv_file(item, amount):
+    with open(CSV_FILE_NAME, "a") as file:
+        file.write(item + "," + str(amount) + "\n")
 
-# Total Spend
-st.write("## Total Spend")
-total_spend = data["Amount"].sum()
-st.write(f"Total Spend: ${total_spend:.2f}")
+# Define a function to read the CSV file and return a DataFrame
+def read_csv_file():
+    return pd.read_csv(CSV_FILE_NAME)
 
-# Monthly Spend
-st.write("## Monthly Spend")
-monthly_spend = data.groupby(pd.Grouper(key="Date", freq="M"))["Amount"].sum().reset_index()
-monthly_spend["Month"] = monthly_spend["Date"].dt.strftime("%b %Y")
-st.bar_chart(monthly_spend.set_index("Month"))
+# Define the Streamlit app
+def app():
+    # Set the title of the app
+    st.title("Spend Analyzer")
+    st.markdown(
+         f"""
+         <style>
+         .stApp {{
+             background-image: url("https://www.pixelstalk.net/wp-content/uploads/images6/Dark-Blue-Background-Desktop.jpg");
+             background-attachment: fixed;
+             background-size: cover
+         }}
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+    # Create a form for user input
+    form = st.form(key="spend_form")
+    
+    # Add form fields for item and amount
+    item = form.text_input("Item")
+    amount = form.number_input("Amount", min_value=0.01, step=0.01)
+    
+    # Add a submit button to the form
+    submitted = form.form_submit_button("Submit")
+    
+    # If the form is submitted, append the data to the CSV file
+    if submitted:
+        append_data_to_csv_file(item, amount)
+    
+    # Read the CSV file and display the spend data as a table
+    spend_data = read_csv_file()
+    st.table(spend_data)
+    
+    # Display a spend chart based on the spend data
+    spend_chart_data = spend_data.groupby("Item")["Amount"].sum()
+    st.bar_chart(spend_chart_data)
 
-# Category Spend
-st.write("## Category Spend")
-category_spend = data.groupby(["Category"])["Amount"].sum().reset_index()
-st.bar_chart(category_spend.set_index("Category"))
-
-# Date Range Filter
-st.write("## Filter Data by Date Range")
-min_date = data["Date"].min().date() if not data.empty else pd.Timestamp.today().date()
-max_date = data["Date"].max().date() if not data.empty else pd.Timestamp.today().date()
-start_date = st.date_input("Start Date", min_date, min_value=min_date, max_value=max_date)
-end_date = st.date_input("End Date", max_date, min_value=min_date, max_value=max_date)
-
-filtered_data = data[(data["Date"] >= start_date) & (data["Date"] <= end_date)]
-st.dataframe(filtered_data)
-
-# Filtered Monthly Spend
-st.write("## Filtered Monthly Spend")
-filtered_monthly_spend = filtered_data.groupby(pd.Grouper(key="Date", freq="M"))["Amount"].sum().reset_index()
-filtered_monthly_spend["Month"] = filtered_monthly_spend["Date"].dt.strftime("%b %Y")
-st.bar_chart(filtered_monthly_spend.set_index("Month"))
-
-# Filtered Category Spend
-st.write("## Filtered Category Spend")
-filtered_category_spend = filtered_data.groupby(["Category"])["Amount"].sum().reset_index()
-st.bar_chart(filtered_category_spend.set_index("Category"))
+if __name__=="__main__":
+    app()
