@@ -21,6 +21,11 @@ def append_data_to_csv_file(item, amount):
 # Define a function to read the CSV file and return a DataFrame
 def read_csv_file():
     return pd.read_csv(CSV_FILE_NAME)
+def clear_csv_file():
+    if os.path.isfile(CSV_FILE_NAME):
+        os.remove(CSV_FILE_NAME)
+    with open(CSV_FILE_NAME, "w") as file:
+        file.write(",".join(CSV_COLUMNS) + "\n")
 
 # Define the Streamlit app
 def app():
@@ -59,6 +64,10 @@ def app():
     # Display a spend chart based on the spend data
     spend_chart_data = spend_data.groupby("Item")["Amount"].sum()
     st.bar_chart(spend_chart_data)
+    # Add a button to clear all contents of the CSV file
+    if st.button("Clear All"):
+        clear_csv_file()
+        st.success("All contents of the CSV file have been cleared.")
 
 if __name__=="__main__":
     app()
