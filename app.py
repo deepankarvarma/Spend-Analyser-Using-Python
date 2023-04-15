@@ -8,10 +8,16 @@ CSV_FILE_NAME = "spend_data.csv"
 # Define the columns for the CSV file
 CSV_COLUMNS = ["Item", "Amount"]
 
-# Check if the CSV file exists, if not create it
-if not os.path.isfile(CSV_FILE_NAME):
+# Define a function to clear the CSV file
+def clear_csv_file():
+    if os.path.isfile(CSV_FILE_NAME):
+        os.remove(CSV_FILE_NAME)
     with open(CSV_FILE_NAME, "w") as file:
         file.write(",".join(CSV_COLUMNS) + "\n")
+
+# Check if the CSV file exists, if not create it
+if not os.path.isfile(CSV_FILE_NAME):
+    clear_csv_file()
 
 # Define a function to append data to the CSV file
 def append_data_to_csv_file(item, amount):
@@ -20,6 +26,7 @@ def append_data_to_csv_file(item, amount):
 
 # Define a function to read the CSV file and return a DataFrame
 def read_csv_file():
+    clear_csv_file()
     return pd.read_csv(CSV_FILE_NAME)
 
 # Define the Streamlit app
